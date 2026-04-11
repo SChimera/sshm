@@ -26,7 +26,7 @@ type Group struct {
 
 // ParsedConfig is the in-memory representation of ~/.ssh/config.
 type ParsedConfig struct {
-	Preamble    string   // raw text before the first Host or Group marker
-	Groups      []Group  // named groups first, Ungrouped (Name=="") last
-	RawBlocks   []string // wildcard Host blocks (Host *), preserved verbatim
+	Preamble  string   // raw text before the first Host or Group marker
+	Groups    []Group  // named groups first, Ungrouped (Name=="") last
+	RawBlocks []string // wildcard Host blocks (Host *), preserved verbatim
 }
