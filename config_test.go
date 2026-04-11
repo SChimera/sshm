@@ -213,6 +213,16 @@ Host dev-box
 		if len(cfg.Groups[i].Connections) != len(cfg2.Groups[i].Connections) {
 			t.Errorf("group %d connection count mismatch", i)
 		}
+		for j := range cfg.Groups[i].Connections {
+			if j >= len(cfg2.Groups[i].Connections) {
+				break
+			}
+			got := cfg2.Groups[i].Connections[j]
+			want := cfg.Groups[i].Connections[j]
+			if got.Host != want.Host || got.HostName != want.HostName || got.User != want.User || got.Port != want.Port {
+				t.Errorf("group %d conn %d: got %+v, want %+v", i, j, got, want)
+			}
+		}
 	}
 }
 
