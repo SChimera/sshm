@@ -161,3 +161,75 @@ func appendExtra(conn *Connection, line string) {
 	}
 	conn.Extra += line
 }
+
+// WriteConfig serialises a ParsedConfig back to ~/.ssh/config format.
+// Order: preamble, named groups, ungrouped connections, raw wildcard blocks.
+func WriteConfig(cfg ParsedConfig) string {
+	var sb strings.Builder
+
+	if cfg.Preamble != "" {
+		sb.WriteString(cfg.Preamble)
+		sb.WriteString("\n\n")
+	}
+
+	// Named groups first
+	for _, g := range cfg.Groups {
+		if g.Name == "" {
+			continue
+		}
+		sb.WriteString("# Group: ")
+		sb.WriteString(g.Name)
+		sb.WriteString("\n")
+		for _, c := range g.Connections {
+			writeConnection(&sb, c)
+		}
+	}
+
+	// Ungrouped connections (Name == "")
+	for _, g := range cfg.Groups {
+		if g.Name != "" {
+			continue
+		}
+		for _, c := range g.Connections {
+			writeConnection(&sb, c)
+		}
+	}
+
+	// Preserved wildcard blocks at end
+	for _, block := range cfg.RawBlocks {
+		sb.WriteString(block)
+		sb.WriteString("\n\n")
+	}
+
+	return strings.TrimRight(sb.String(), "\n")
+}
+
+func writeConnection(sb *strings.Builder, c Connection) {
+	sb.WriteString("Host ")
+	sb.WriteString(c.Host)
+	sb.WriteString("\n")
+	writeField(sb, "HostName", c.HostName)
+	writeField(sb, "User", c.User)
+	writeField(sb, "Port", c.Port)
+	writeField(sb, "IdentityFile", c.IdentityFile)
+	writeField(sb, "ProxyJump", c.ProxyJump)
+	writeField(sb, "ForwardAgent", c.ForwardAgent)
+	writeField(sb, "LocalForward", c.LocalForward)
+	writeField(sb, "RemoteForward", c.RemoteForward)
+	if c.Extra != "" {
+		sb.WriteString(c.Extra)
+		sb.WriteString("\n")
+	}
+	sb.WriteString("\n")
+}
+
+func writeField(sb *strings.Builder, key, value string) {
+	if value == "" {
+		return
+	}
+	sb.WriteString("    ")
+	sb.WriteString(key)
+	sb.WriteString(" ")
+	sb.WriteString(value)
+	sb.WriteString("\n")
+}

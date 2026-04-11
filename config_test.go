@@ -2,6 +2,7 @@
 package main
 
 import (
+	"strings"
 	"testing"
 )
 
@@ -130,5 +131,111 @@ func TestParseExtendedFields(t *testing.T) {
 	}
 	if c.RemoteForward != "9090 localhost:9090" {
 		t.Errorf("RemoteForward: got %q", c.RemoteForward)
+	}
+}
+
+func TestWriteEmpty(t *testing.T) {
+	cfg := ParsedConfig{}
+	out := WriteConfig(cfg)
+	if out != "" {
+		t.Errorf("expected empty output, got %q", out)
+	}
+}
+
+func TestWriteGrouped(t *testing.T) {
+	cfg := ParsedConfig{
+		Groups: []Group{
+			{
+				Name: "Production",
+				Connections: []Connection{
+					{Host: "web", HostName: "10.0.0.1", User: "ubuntu", Port: "22"},
+				},
+			},
+		},
+	}
+	out := WriteConfig(cfg)
+	if !strings.Contains(out, "# Group: Production") {
+		t.Errorf("missing group marker, got:\n%s", out)
+	}
+	if !strings.Contains(out, "Host web") {
+		t.Errorf("missing Host line, got:\n%s", out)
+	}
+	if !strings.Contains(out, "HostName 10.0.0.1") {
+		t.Errorf("missing HostName, got:\n%s", out)
+	}
+}
+
+func TestWriteUngroupedLast(t *testing.T) {
+	cfg := ParsedConfig{
+		Groups: []Group{
+			{Name: "Prod", Connections: []Connection{{Host: "prod", HostName: "1.1.1.1"}}},
+			{Name: "", Connections: []Connection{{Host: "lone", HostName: "2.2.2.2"}}},
+		},
+	}
+	out := WriteConfig(cfg)
+	prodIdx := strings.Index(out, "# Group: Prod")
+	loneIdx := strings.Index(out, "Host lone")
+	if prodIdx == -1 || loneIdx == -1 {
+		t.Fatalf("missing expected content:\n%s", out)
+	}
+	if loneIdx < prodIdx {
+		t.Errorf("ungrouped connection 'lone' should appear after named group 'Prod'")
+	}
+}
+
+func TestRoundTrip(t *testing.T) {
+	input := `# Group: Production
+Host web-prod
+    HostName 10.0.0.1
+    User ubuntu
+    Port 22
+
+Host db-prod
+    HostName 10.0.0.2
+    User postgres
+
+# Group: Dev
+Host dev-box
+    HostName 10.0.0.3
+    User admin
+`
+	cfg := ParseConfig(input)
+	out := WriteConfig(cfg)
+	cfg2 := ParseConfig(out)
+
+	if len(cfg.Groups) != len(cfg2.Groups) {
+		t.Fatalf("group count mismatch: %d vs %d", len(cfg.Groups), len(cfg2.Groups))
+	}
+	for i := range cfg.Groups {
+		if cfg.Groups[i].Name != cfg2.Groups[i].Name {
+			t.Errorf("group %d name mismatch: %q vs %q", i, cfg.Groups[i].Name, cfg2.Groups[i].Name)
+		}
+		if len(cfg.Groups[i].Connections) != len(cfg2.Groups[i].Connections) {
+			t.Errorf("group %d connection count mismatch", i)
+		}
+	}
+}
+
+func TestWritePreamble(t *testing.T) {
+	cfg := ParsedConfig{
+		Preamble: "# managed by sshm",
+		Groups:   []Group{{Name: "Dev", Connections: []Connection{{Host: "box", HostName: "1.1.1.1"}}}},
+	}
+	out := WriteConfig(cfg)
+	if !strings.HasPrefix(out, "# managed by sshm") {
+		t.Errorf("preamble should be first, got:\n%s", out)
+	}
+}
+
+func TestWriteRawBlocksLast(t *testing.T) {
+	cfg := ParsedConfig{
+		RawBlocks: []string{"Host *\n    ServerAliveInterval 60"},
+		Groups:    []Group{{Name: "Dev", Connections: []Connection{{Host: "box", HostName: "1.1.1.1"}}}},
+	}
+	out := WriteConfig(cfg)
+	boxIdx := strings.Index(out, "Host box")
+	wildcardIdx := strings.Index(out, "Host *")
+	if wildcardIdx < boxIdx {
+		t.Errorf("wildcard block should appear after managed connections")
 	}
 }
