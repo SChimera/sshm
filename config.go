@@ -40,6 +40,7 @@ func ParseConfig(content string) ParsedConfig {
 		inWildcard = false
 	}
 
+	content = strings.ReplaceAll(content, "\r\n", "\n")
 	lines := strings.Split(content, "\n")
 	for _, line := range lines {
 		trimmed := strings.TrimSpace(line)
@@ -120,6 +121,12 @@ func ungroupedIndex(cfg *ParsedConfig) int {
 // applyDirective parses a single SSH config directive line and sets the
 // corresponding field on conn. Unrecognised directives go into Extra.
 func applyDirective(trimmed string, conn *Connection) {
+	// Normalize "Key=Value" and "Key = Value" to "Key Value"
+	if idx := strings.IndexAny(trimmed, "= "); idx > 0 {
+		key := strings.TrimSpace(trimmed[:idx])
+		value := strings.TrimSpace(trimmed[idx+1:])
+		trimmed = key + " " + strings.TrimSpace(value)
+	}
 	parts := strings.SplitN(trimmed, " ", 2)
 	if len(parts) != 2 {
 		appendExtra(conn, trimmed)
