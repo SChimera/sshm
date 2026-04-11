@@ -2,6 +2,8 @@
 package main
 
 import (
+	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -232,4 +234,39 @@ func writeField(sb *strings.Builder, key, value string) {
 	sb.WriteString(" ")
 	sb.WriteString(value)
 	sb.WriteString("\n")
+}
+
+// ConfigPath returns the path to ~/.ssh/config on all platforms.
+func ConfigPath() (string, error) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(home, ".ssh", "config"), nil
+}
+
+// Load reads the SSH config file at path and returns a ParsedConfig.
+// If the file does not exist, an empty ParsedConfig is returned without error.
+func Load(path string) (ParsedConfig, error) {
+	data, err := os.ReadFile(path)
+	if os.IsNotExist(err) {
+		return ParsedConfig{}, nil
+	}
+	if err != nil {
+		return ParsedConfig{}, err
+	}
+	return ParseConfig(string(data)), nil
+}
+
+// Save writes cfg back to path, creating the file (and ~/.ssh directory) if needed.
+// File permissions: 0600 (owner read/write only). Directory permissions: 0700.
+func Save(path string, cfg ParsedConfig) error {
+	if err := os.MkdirAll(filepath.Dir(path), 0700); err != nil {
+		return err
+	}
+	content := WriteConfig(cfg)
+	if content != "" {
+		content += "\n"
+	}
+	return os.WriteFile(path, []byte(content), 0600)
 }
