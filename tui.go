@@ -231,7 +231,7 @@ func (a App) handleEditKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			a.statusMsg = "Host alias is required"
 			return a, nil
 		}
-		a.saveConnection(conn, a.editForm.groupName, a.editForm.isNew)
+		a.saveConnection(conn, a.editForm.groupName, a.editForm.isNew, a.editForm.originalHost)
 		a.mode = ModeNormal
 		a.focusLeft = true
 		a.listPanel.focused = true
@@ -265,16 +265,22 @@ func (a App) handleSearchKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 }
 
 func (a App) handleConfirmKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	if msg.String() == "y" {
+	switch msg.String() {
+	case "y":
 		if a.mode == ModeConfirmDelete {
 			a.deleteSelectedConnection()
 		} else {
 			a.deleteSelectedGroup()
 		}
+		a.mode = ModeNormal
+		a.statusMsg = ""
+		a.syncDetail()
+	case "n", "N", "esc":
+		a.mode = ModeNormal
+		a.statusMsg = ""
+	default:
+		return a, nil
 	}
-	a.mode = ModeNormal
-	a.statusMsg = ""
-	a.syncDetail()
 	return a, nil
 }
 
@@ -286,6 +292,19 @@ func (a App) handleNewGroupKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	if msg.String() == "enter" {
 		name := strings.TrimSpace(a.groupInput.Value())
 		if name != "" {
+			// Check for duplicate group name
+			duplicate := false
+			for _, g := range a.cfg.Groups {
+				if g.Name == name {
+					duplicate = true
+					break
+				}
+			}
+			if duplicate {
+				a.statusMsg = fmt.Sprintf("Group %q already exists", name)
+				a.mode = ModeNormal
+				return a, nil
+			}
 			a.cfg.Groups = append(a.cfg.Groups, Group{Name: name})
 			a.listPanel.groups = a.cfg.Groups
 			a.listPanel.cursor = Cursor{GroupIdx: len(a.cfg.Groups) - 1, ConnIdx: -1}
@@ -300,12 +319,12 @@ func (a App) handleNewGroupKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 }
 
 // saveConnection upserts a connection into the config and persists to disk.
-func (a *App) saveConnection(conn Connection, groupName string, isNew bool) {
+func (a *App) saveConnection(conn Connection, groupName string, isNew bool, originalHost string) {
 	if !isNew {
-		// Update in-place
+		// Update in-place, matching by originalHost to handle host alias renames
 		for gi := range a.cfg.Groups {
 			for ci := range a.cfg.Groups[gi].Connections {
-				if a.cfg.Groups[gi].Connections[ci].Host == conn.Host {
+				if a.cfg.Groups[gi].Connections[ci].Host == originalHost {
 					a.cfg.Groups[gi].Connections[ci] = conn
 					break
 				}

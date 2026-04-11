@@ -30,12 +30,13 @@ var formFields = []fieldDef{
 
 // EditForm is the right-panel form for adding or editing a connection.
 type EditForm struct {
-	inputs      []textinput.Model
-	activeField int
-	isNew       bool
-	groupName   string // group to save into
-	width       int
-	height      int
+	inputs       []textinput.Model
+	activeField  int
+	isNew        bool
+	groupName    string // group to save into
+	originalHost string // host alias before editing (empty for new connections)
+	width        int
+	height       int
 }
 
 // NewEditForm creates a form pre-filled from conn. Pass nil for a new connection.
@@ -67,10 +68,11 @@ func NewEditForm(conn *Connection, groupName string, isNew bool) EditForm {
 	}
 
 	return EditForm{
-		inputs:      inputs,
-		activeField: 0,
-		isNew:       isNew,
-		groupName:   groupName,
+		inputs:       inputs,
+		activeField:  0,
+		isNew:        isNew,
+		groupName:    groupName,
+		originalHost: values[0], // conn.Host, or "" if conn==nil
 	}
 }
 
