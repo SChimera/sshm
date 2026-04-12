@@ -71,10 +71,28 @@ border     = "#000008"
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if th.Background != "#000001" {
-		t.Errorf("Background: got %q want %q", th.Background, "#000001")
+		t.Errorf("Background: got %q want #000001", th.Background)
+	}
+	if th.Surface != "#000002" {
+		t.Errorf("Surface: got %q want #000002", th.Surface)
+	}
+	if th.Muted != "#000003" {
+		t.Errorf("Muted: got %q want #000003", th.Muted)
+	}
+	if th.Foreground != "#000004" {
+		t.Errorf("Foreground: got %q want #000004", th.Foreground)
+	}
+	if th.Primary != "#000005" {
+		t.Errorf("Primary: got %q want #000005", th.Primary)
+	}
+	if th.Accent != "#000006" {
+		t.Errorf("Accent: got %q want #000006", th.Accent)
+	}
+	if th.Danger != "#000007" {
+		t.Errorf("Danger: got %q want #000007", th.Danger)
 	}
 	if th.Border != "#000008" {
-		t.Errorf("Border: got %q want %q", th.Border, "#000008")
+		t.Errorf("Border: got %q want #000008", th.Border)
 	}
 }
 
@@ -84,7 +102,9 @@ func TestLoadConfigTheme_PartialFields(t *testing.T) {
 	content := `[theme]
 primary = "#ff0000"
 `
-	os.WriteFile(path, []byte(content), 0600)
+	if err := os.WriteFile(path, []byte(content), 0600); err != nil {
+		t.Fatal(err)
+	}
 	th, err := LoadConfigTheme(path)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -108,7 +128,6 @@ func TestResolveTheme_FallsBackToDefault(t *testing.T) {
 	// With no config file reachable and OSC4 returning false (on Windows CI),
 	// ResolveTheme should return the default theme values.
 	th := ResolveTheme()
-	def := DefaultTheme()
 	// All fields should be non-empty (filled by default at minimum)
 	if th.Background == "" {
 		t.Error("Background should not be empty after ResolveTheme")
@@ -123,5 +142,4 @@ func TestResolveTheme_FallsBackToDefault(t *testing.T) {
 			t.Errorf("field %d is empty after ResolveTheme", i)
 		}
 	}
-	_ = def // suppress unused warning
 }
