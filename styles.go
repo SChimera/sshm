@@ -26,6 +26,7 @@ func BuildStyles(t Theme) Styles {
 	primary := lipgloss.Color(t.Primary)
 	muted   := lipgloss.Color(t.Muted)
 	accent  := lipgloss.Color(t.Accent)
+	bg      := lipgloss.Color(t.Background)
 	surface := lipgloss.Color(t.Surface)
 	border  := lipgloss.Color(t.Border)
 	danger  := lipgloss.Color(t.Danger)
@@ -42,11 +43,12 @@ func BuildStyles(t Theme) Styles {
 
 		SelectedItem: lipgloss.NewStyle().
 			Background(surface).
-			Foreground(lipgloss.Color("#ffffff")).
+			Foreground(fg).
 			PaddingLeft(1),
 
 		SelectedItemUnfocused: lipgloss.NewStyle().
-			Background(lipgloss.Color("#1a2035")).
+			Background(bg).
+			Foreground(muted).
 			PaddingLeft(1),
 
 		NormalItem: lipgloss.NewStyle().
