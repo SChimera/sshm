@@ -24,6 +24,7 @@ const (
 
 // App is the root Bubbletea model.
 type App struct {
+	styles     Styles
 	cfg        ParsedConfig
 	configPath string
 	keys       KeyMap
@@ -43,8 +44,8 @@ type App struct {
 }
 
 // NewApp constructs the App from a loaded config.
-func NewApp(cfg ParsedConfig, configPath string) App {
-	lp := NewListPanel(cfg.Groups, Styles{})
+func NewApp(cfg ParsedConfig, configPath string, styles Styles) App {
+	lp := NewListPanel(cfg.Groups, styles)
 	lp.focused = true
 
 	si := textinput.New()
@@ -56,11 +57,12 @@ func NewApp(cfg ParsedConfig, configPath string) App {
 	gi.Width = 20
 
 	return App{
+		styles:      styles,
 		cfg:         cfg,
 		configPath:  configPath,
 		keys:        DefaultKeyMap(),
 		listPanel:   lp,
-		detailPanel: NewDetailPanel(Styles{}),
+		detailPanel: NewDetailPanel(styles),
 		focusLeft:   true,
 		searchInput: si,
 		groupInput:  gi,
@@ -173,7 +175,7 @@ func (a App) handleNormalKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		if group != nil {
 			groupName = group.Name
 		}
-		a.editForm = NewEditForm(conn, groupName, false, Styles{})
+		a.editForm = NewEditForm(conn, groupName, false, a.styles)
 		a.editForm.width = a.detailPanel.width
 		a.editForm.height = a.detailPanel.height
 		a.mode = ModeEditing
@@ -187,7 +189,7 @@ func (a App) handleNormalKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		if group != nil {
 			groupName = group.Name
 		}
-		a.editForm = NewEditForm(nil, groupName, true, Styles{})
+		a.editForm = NewEditForm(nil, groupName, true, a.styles)
 		a.editForm.width = a.detailPanel.width
 		a.editForm.height = a.detailPanel.height
 		a.mode = ModeEditing
@@ -429,13 +431,13 @@ func (a App) View() string {
 }
 
 func (a App) buildStatusBar() string {
-	style := StyleStatusBar.Width(a.width)
+	style := a.styles.StatusBar.Width(a.width)
 
 	switch a.mode {
 	case ModeConfirmDelete, ModeConfirmDeleteGroup:
-		return StyleConfirmPrompt.Width(a.width).Render(" " + a.statusMsg)
+		return a.styles.ConfirmPrompt.Width(a.width).Render(" " + a.statusMsg)
 	case ModeEditing:
-		return StyleStatusEdit.Width(a.width).Render(" — editing mode —")
+		return a.styles.StatusEdit.Width(a.width).Render(" — editing mode —")
 	case ModeNewGroupPrompt:
 		return style.Render(" New group: " + a.groupInput.View())
 	case ModeSearching:

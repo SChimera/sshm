@@ -21,7 +21,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	app := NewApp(cfg, configPath)
+	app := NewApp(cfg, configPath, Styles{})
 
 	p := tea.NewProgram(app, tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
