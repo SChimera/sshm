@@ -173,7 +173,7 @@ func (a App) handleNormalKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		if group != nil {
 			groupName = group.Name
 		}
-		a.editForm = NewEditForm(conn, groupName, false)
+		a.editForm = NewEditForm(conn, groupName, false, Styles{})
 		a.editForm.width = a.detailPanel.width
 		a.editForm.height = a.detailPanel.height
 		a.mode = ModeEditing
@@ -187,7 +187,7 @@ func (a App) handleNormalKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		if group != nil {
 			groupName = group.Name
 		}
-		a.editForm = NewEditForm(nil, groupName, true)
+		a.editForm = NewEditForm(nil, groupName, true, Styles{})
 		a.editForm.width = a.detailPanel.width
 		a.editForm.height = a.detailPanel.height
 		a.mode = ModeEditing

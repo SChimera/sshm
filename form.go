@@ -6,7 +6,6 @@ import (
 
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 )
 
 // fieldDef describes one form field.
@@ -30,17 +29,18 @@ var formFields = []fieldDef{
 
 // EditForm is the right-panel form for adding or editing a connection.
 type EditForm struct {
+	styles       Styles
 	inputs       []textinput.Model
 	activeField  int
 	isNew        bool
-	groupName    string // group to save into
+	groupName    string
 	originalHost string // host alias before editing (empty for new connections)
 	width        int
 	height       int
 }
 
 // NewEditForm creates a form pre-filled from conn. Pass nil for a new connection.
-func NewEditForm(conn *Connection, groupName string, isNew bool) EditForm {
+func NewEditForm(conn *Connection, groupName string, isNew bool, styles Styles) EditForm {
 	values := make([]string, len(formFields))
 	if conn != nil {
 		values[0] = conn.Host
@@ -68,11 +68,12 @@ func NewEditForm(conn *Connection, groupName string, isNew bool) EditForm {
 	}
 
 	return EditForm{
+		styles:       styles,
 		inputs:       inputs,
 		activeField:  0,
 		isNew:        isNew,
 		groupName:    groupName,
-		originalHost: values[0], // conn.Host, or "" if conn==nil
+		originalHost: values[0],
 	}
 }
 
@@ -127,21 +128,18 @@ func (f EditForm) View() string {
 	if f.isNew {
 		title = "New Connection"
 	}
-	lines = append(lines, StyleAccent.Render(title))
+	lines = append(lines, f.styles.Accent.Render(title))
 	lines = append(lines, "")
 
 	for i, fd := range formFields {
-		label := StyleLabel.Render(fd.label)
+		label := f.styles.Label.Render(fd.label)
 		input := f.inputs[i].View()
-		if i == f.activeField {
-			input = lipgloss.NewStyle().Foreground(lipgloss.Color("#ffffff")).Render(input)
-		}
 		lines = append(lines, label)
 		lines = append(lines, input)
 		lines = append(lines, "")
 	}
 
-	lines = append(lines, StyleMuted.Render("tab:next  shift+tab:prev  ctrl+s:save  esc:cancel"))
+	lines = append(lines, f.styles.Muted.Render("tab:next  shift+tab:prev  ctrl+s:save  esc:cancel"))
 
-	return StyleDetailPanel.Width(f.width).Height(f.height).Render(strings.Join(lines, "\n"))
+	return f.styles.DetailPanel.Width(f.width).Height(f.height).Render(strings.Join(lines, "\n"))
 }
