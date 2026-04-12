@@ -8,11 +8,17 @@ import (
 
 // DetailPanel renders connection info in the right panel.
 type DetailPanel struct {
+	styles  Styles
 	conn    *Connection // nil if no connection selected
 	group   *Group      // the group the connection belongs to
 	focused bool
 	width   int
 	height  int
+}
+
+// NewDetailPanel constructs a DetailPanel with the given styles.
+func NewDetailPanel(styles Styles) DetailPanel {
+	return DetailPanel{styles: styles}
 }
 
 // View renders the detail panel.
@@ -21,7 +27,7 @@ func (d DetailPanel) View() string {
 		if d.group != nil {
 			return d.viewGroup()
 		}
-		return StyleMuted.Render("\n  Select a connection")
+		return d.styles.Muted.Render("\n  Select a connection")
 	}
 	return d.viewConnection()
 }
@@ -32,28 +38,28 @@ func (d DetailPanel) viewGroup() string {
 		name = "Ungrouped"
 	}
 	lines := []string{
-		StyleTitle.Render(name),
+		d.styles.Title.Render(name),
 		"",
-		StyleMuted.Render(fmt.Sprintf("%d connection(s)", len(d.group.Connections))),
+		d.styles.Muted.Render(fmt.Sprintf("%d connection(s)", len(d.group.Connections))),
 		"",
-		StyleMuted.Render("Press enter on a connection to connect"),
-		StyleMuted.Render("Press n to add a connection to this group"),
+		d.styles.Muted.Render("Press enter on a connection to connect"),
+		d.styles.Muted.Render("Press n to add a connection to this group"),
 	}
-	return StyleDetailPanel.Width(d.width).Render(strings.Join(lines, "\n"))
+	return d.styles.DetailPanel.Width(d.width).Render(strings.Join(lines, "\n"))
 }
 
 func (d DetailPanel) viewConnection() string {
 	c := d.conn
 	var lines []string
 
-	lines = append(lines, StyleTitle.Render(c.Host))
+	lines = append(lines, d.styles.Title.Render(c.Host))
 	lines = append(lines, "")
 
 	row := func(label, value string) string {
 		if value == "" {
-			value = StyleMuted.Render("—")
+			value = d.styles.Muted.Render("—")
 		}
-		return StyleLabel.Render(label) + StyleValue.Render(value)
+		return d.styles.Label.Render(label) + d.styles.Value.Render(value)
 	}
 
 	lines = append(lines, row("HostName", c.HostName))
@@ -67,12 +73,12 @@ func (d DetailPanel) viewConnection() string {
 
 	if c.Extra != "" {
 		lines = append(lines, "")
-		lines = append(lines, StyleMuted.Render("Extra:"))
-		lines = append(lines, StyleMuted.Render(c.Extra))
+		lines = append(lines, d.styles.Muted.Render("Extra:"))
+		lines = append(lines, d.styles.Muted.Render(c.Extra))
 	}
 
 	lines = append(lines, "")
-	lines = append(lines, StyleMuted.Render("enter:connect  e:edit  d:delete"))
+	lines = append(lines, d.styles.Muted.Render("enter:connect  e:edit  d:delete"))
 
-	return StyleDetailPanel.Width(d.width).Height(d.height).Render(strings.Join(lines, "\n"))
+	return d.styles.DetailPanel.Width(d.width).Height(d.height).Render(strings.Join(lines, "\n"))
 }

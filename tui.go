@@ -60,6 +60,7 @@ func NewApp(cfg ParsedConfig, configPath string) App {
 		configPath:  configPath,
 		keys:        DefaultKeyMap(),
 		listPanel:   lp,
+		detailPanel: NewDetailPanel(Styles{}),
 		focusLeft:   true,
 		searchInput: si,
 		groupInput:  gi,
