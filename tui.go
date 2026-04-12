@@ -44,7 +44,7 @@ type App struct {
 
 // NewApp constructs the App from a loaded config.
 func NewApp(cfg ParsedConfig, configPath string) App {
-	lp := NewListPanel(cfg.Groups)
+	lp := NewListPanel(cfg.Groups, Styles{})
 	lp.focused = true
 
 	si := textinput.New()

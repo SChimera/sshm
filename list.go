@@ -4,8 +4,6 @@ package main
 import (
 	"fmt"
 	"strings"
-
-	"github.com/charmbracelet/lipgloss"
 )
 
 // Cursor identifies the selected item in the list.
@@ -17,6 +15,7 @@ type Cursor struct {
 
 // ListPanel is the left-panel Bubbletea sub-model.
 type ListPanel struct {
+	styles    Styles
 	groups    []Group
 	cursor    Cursor
 	collapsed map[int]bool // group index → collapsed?
@@ -26,8 +25,9 @@ type ListPanel struct {
 	focused   bool
 }
 
-func NewListPanel(groups []Group) ListPanel {
+func NewListPanel(groups []Group, styles Styles) ListPanel {
 	return ListPanel{
+		styles:    styles,
 		groups:    groups,
 		cursor:    Cursor{GroupIdx: 0, ConnIdx: -1},
 		collapsed: make(map[int]bool),
@@ -158,9 +158,9 @@ func (l ListPanel) View() string {
 
 		groupLine := fmt.Sprintf("%s %s", arrow, groupName)
 		if gi == l.cursor.GroupIdx && l.cursor.ConnIdx == -1 && l.focused {
-			lines = append(lines, StyleSelectedItem.Render(groupLine))
+			lines = append(lines, l.styles.SelectedItem.Render(groupLine))
 		} else {
-			lines = append(lines, StyleGroupName.Render(groupLine))
+			lines = append(lines, l.styles.GroupName.Render(groupLine))
 		}
 
 		if l.collapsed[gi] {
@@ -171,24 +171,22 @@ func (l ListPanel) View() string {
 			label := "  " + c.Host
 			if gi == l.cursor.GroupIdx && ci == l.cursor.ConnIdx {
 				if l.focused {
-					lines = append(lines, StyleSelectedItem.Width(l.width-2).Render(label))
+					lines = append(lines, l.styles.SelectedItem.Width(l.width-2).Render(label))
 				} else {
-					lines = append(lines, lipgloss.NewStyle().
-						Background(lipgloss.Color("#1a2035")).
+					lines = append(lines, l.styles.SelectedItemUnfocused.
 						Width(l.width-2).
-						PaddingLeft(1).
 						Render(label))
 				}
 			} else {
-				lines = append(lines, StyleNormalItem.Render(label))
+				lines = append(lines, l.styles.NormalItem.Render(label))
 			}
 		}
 	}
 
 	if len(lines) == 0 {
-		lines = append(lines, StyleMuted.Render("  No connections"))
+		lines = append(lines, l.styles.Muted.Render("  No connections"))
 	}
 
 	content := strings.Join(lines, "\n")
-	return StyleListPanel.Width(l.width).Height(l.height).Render(content)
+	return l.styles.ListPanel.Width(l.width).Height(l.height).Render(content)
 }
