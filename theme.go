@@ -2,7 +2,9 @@
 package main
 
 import (
+	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -125,14 +127,22 @@ func LoadConfigTheme(path string) (Theme, error) {
 // 2. Terminal OSC 4 colour query
 // 3. Built-in default theme
 //
-// Must be called before tea.NewProgram starts.
-func ResolveTheme() Theme {
+// Returns a non-nil error only when the config file exists but fails to parse.
+// Missing config files are not errors. Must be called before tea.NewProgram starts.
+func ResolveTheme() (Theme, error) {
 	result := Theme{}
+	var cfgErr error
 
 	// 1. Config file (partial overrides allowed)
 	if path, err := ThemeConfigPath(); err == nil {
-		if t, err := LoadConfigTheme(path); err == nil {
+		t, err := LoadConfigTheme(path)
+		switch {
+		case err == nil:
 			result = mergeTheme(result, t)
+		case errors.Is(err, fs.ErrNotExist):
+			// missing config is fine
+		default:
+			cfgErr = fmt.Errorf("theme config %s: %w", path, err)
 		}
 	}
 
@@ -142,5 +152,5 @@ func ResolveTheme() Theme {
 	}
 
 	// 3. Built-in default fills anything still empty
-	return mergeTheme(result, DefaultTheme())
+	return mergeTheme(result, DefaultTheme()), cfgErr
 }

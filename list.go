@@ -18,8 +18,8 @@ type ListPanel struct {
 	styles    Styles
 	groups    []Group
 	cursor    Cursor
-	collapsed map[int]bool // group index → collapsed?
-	filter    string       // empty = no filter
+	collapsed map[string]bool // group name → collapsed? ("" for Ungrouped)
+	filter    string          // empty = no filter
 	width     int
 	height    int
 	focused   bool
@@ -30,7 +30,7 @@ func NewListPanel(groups []Group, styles Styles) ListPanel {
 		styles:    styles,
 		groups:    groups,
 		cursor:    Cursor{GroupIdx: 0, ConnIdx: -1},
-		collapsed: make(map[int]bool),
+		collapsed: make(map[string]bool),
 	}
 }
 
@@ -52,6 +52,29 @@ func (l ListPanel) SelectedConnection() *Connection {
 func (l ListPanel) SelectedGroup() *Group {
 	g := l.visibleGroup(l.cursor.GroupIdx)
 	return g
+}
+
+// ClampCursor keeps the cursor within the current visible-groups bounds.
+// Called after the filter or underlying groups change.
+func (l *ListPanel) ClampCursor() {
+	vg := l.visibleGroups()
+	if len(vg) == 0 {
+		l.cursor = Cursor{GroupIdx: 0, ConnIdx: -1}
+		return
+	}
+	if l.cursor.GroupIdx >= len(vg) {
+		l.cursor.GroupIdx = len(vg) - 1
+	}
+	if l.cursor.GroupIdx < 0 {
+		l.cursor.GroupIdx = 0
+	}
+	g := vg[l.cursor.GroupIdx]
+	if l.cursor.ConnIdx >= len(g.Connections) {
+		l.cursor.ConnIdx = len(g.Connections) - 1
+	}
+	if l.cursor.ConnIdx < -1 {
+		l.cursor.ConnIdx = -1
+	}
 }
 
 // visibleGroups returns groups that match the current filter.
@@ -103,7 +126,7 @@ func (l *ListPanel) MoveUp() {
 	if l.cursor.GroupIdx > 0 {
 		l.cursor.GroupIdx--
 		g := vg[l.cursor.GroupIdx]
-		if !l.collapsed[l.cursor.GroupIdx] && len(g.Connections) > 0 {
+		if !l.collapsed[g.Name] && len(g.Connections) > 0 {
 			l.cursor.ConnIdx = len(g.Connections) - 1
 		} else {
 			l.cursor.ConnIdx = -1
@@ -118,7 +141,7 @@ func (l *ListPanel) MoveDown() {
 		return
 	}
 	g := vg[l.cursor.GroupIdx]
-	if l.cursor.ConnIdx == -1 && !l.collapsed[l.cursor.GroupIdx] && len(g.Connections) > 0 {
+	if l.cursor.ConnIdx == -1 && !l.collapsed[g.Name] && len(g.Connections) > 0 {
 		l.cursor.ConnIdx = 0
 		return
 	}
@@ -135,8 +158,12 @@ func (l *ListPanel) MoveDown() {
 
 // ToggleCollapse collapses or expands the current group.
 func (l *ListPanel) ToggleCollapse() {
-	l.collapsed[l.cursor.GroupIdx] = !l.collapsed[l.cursor.GroupIdx]
-	if l.collapsed[l.cursor.GroupIdx] {
+	g := l.visibleGroup(l.cursor.GroupIdx)
+	if g == nil {
+		return
+	}
+	l.collapsed[g.Name] = !l.collapsed[g.Name]
+	if l.collapsed[g.Name] {
 		l.cursor.ConnIdx = -1
 	}
 }
@@ -152,7 +179,7 @@ func (l ListPanel) View() string {
 			groupName = "Ungrouped"
 		}
 		arrow := "▼"
-		if l.collapsed[gi] {
+		if l.collapsed[g.Name] {
 			arrow = "▶"
 		}
 
@@ -163,7 +190,7 @@ func (l ListPanel) View() string {
 			lines = append(lines, l.styles.GroupName.Render(groupLine))
 		}
 
-		if l.collapsed[gi] {
+		if l.collapsed[g.Name] {
 			continue
 		}
 

@@ -12,6 +12,7 @@ type KeyMap struct {
 	New      key.Binding
 	NewGroup key.Binding
 	Delete   key.Binding
+	Rename   key.Binding
 	Search   key.Binding
 	Tab      key.Binding
 	ShiftTab key.Binding
@@ -31,6 +32,7 @@ func DefaultKeyMap() KeyMap {
 		New:      key.NewBinding(key.WithKeys("n"), key.WithHelp("n", "new connection")),
 		NewGroup: key.NewBinding(key.WithKeys("g"), key.WithHelp("g", "new group")),
 		Delete:   key.NewBinding(key.WithKeys("d"), key.WithHelp("d", "delete")),
+		Rename:   key.NewBinding(key.WithKeys("r"), key.WithHelp("r", "rename group")),
 		Search:   key.NewBinding(key.WithKeys("/"), key.WithHelp("/", "search")),
 		Tab:      key.NewBinding(key.WithKeys("tab"), key.WithHelp("tab", "switch panel")),
 		ShiftTab: key.NewBinding(key.WithKeys("shift+tab"), key.WithHelp("shift+tab", "prev field")),

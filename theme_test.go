@@ -127,7 +127,10 @@ func TestLoadConfigTheme_MissingFile(t *testing.T) {
 func TestResolveTheme_FallsBackToDefault(t *testing.T) {
 	// With no config file reachable and OSC4 returning false (on Windows CI),
 	// ResolveTheme should return the default theme values.
-	th := ResolveTheme()
+	th, err := ResolveTheme()
+	if err != nil {
+		t.Logf("ResolveTheme returned non-fatal config error: %v", err)
+	}
 	// All fields should be non-empty (filled by default at minimum)
 	if th.Background == "" {
 		t.Error("Background should not be empty after ResolveTheme")

@@ -21,10 +21,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	theme := ResolveTheme()
+	theme, themeErr := ResolveTheme()
 	styles := BuildStyles(theme)
 
 	app := NewApp(cfg, configPath, styles)
+	if themeErr != nil {
+		app.statusMsg = fmt.Sprintf("theme: %v", themeErr)
+	}
 
 	p := tea.NewProgram(app, tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
